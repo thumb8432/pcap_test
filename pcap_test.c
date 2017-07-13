@@ -3,7 +3,7 @@
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-#include <linux/tcp.h>
+#include <netinet/tcp.h>
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     struct ether_header *eth_hdr;
     struct ip           *ip_hdr;
     struct tcphdr       *tcp_hdr;
-    u_int8_t *host;
+    char *data;
     int i;
 
     /* Define the device */
@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        printf("**********************************\n");
+
         eth_hdr = (struct ether_header*) packet;
 
         printf("[mac addr]\n");
@@ -73,7 +75,7 @@ int main(int argc, char *argv[])
             printf(i==0?"":":");
             printf("%02x", eth_hdr->ether_dhost[i]);
         }
-        printf("\n");
+        printf("\n\n");
 
         if(ntohs(eth_hdr->ether_type) == ETHERTYPE_IP)
         {
@@ -82,6 +84,7 @@ int main(int argc, char *argv[])
             printf("[ip addr]\n");
             printf("shost ip addr : %s\n", inet_ntoa(ip_hdr->ip_src));
             printf("dhost ip addr : %s\n", inet_ntoa(ip_hdr->ip_dst));
+            printf("\n");
 
             if(ip_hdr->ip_p == 0x06) // TCP protocol
             {
@@ -89,10 +92,15 @@ int main(int argc, char *argv[])
                 printf("[tcp port]\n");
                 printf("source port : %d\n", tcp_hdr->source);
                 printf("dest port : %d\n", tcp_hdr->dest);
+                printf("\n");
+                
+                data = packet +  sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr);
+                printf("[data]\n");
+                write(1, data, 0x10);
+                printf("\n");
             }
         }
-
-        printf("\n");
+        printf("**********************************\n\n");
     }
     /* And close the session */
     pcap_close(handle);
