@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <pcap.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
         if(ntohs(eth_hdr->ether_type) == ETHERTYPE_IP)
         {
-            ip_hdr = packet + sizeof(struct ether_header);
+            ip_hdr = (struct ip *)(packet + sizeof(struct ether_header));
 
             printf("[ip addr]\n");
             printf("shost ip addr : %s\n", inet_ntoa(ip_hdr->ip_src));
@@ -88,13 +89,13 @@ int main(int argc, char *argv[])
 
             if(ip_hdr->ip_p == 0x06) // TCP protocol
             {
-                tcp_hdr = packet + sizeof(struct ether_header) + sizeof(struct ip);
+                tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) + sizeof(struct ip));
                 printf("[tcp port]\n");
                 printf("source port : %d\n", tcp_hdr->source);
                 printf("dest port : %d\n", tcp_hdr->dest);
                 printf("\n");
-                
-                data = packet +  sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr);
+
+                data = (char *)(packet + sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
                 printf("[data]\n");
                 write(1, data, 0x10);
                 printf("\n");
