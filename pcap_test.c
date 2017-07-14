@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     struct tcphdr       *tcp_hdr;
     char ether_shost[3 * ETHER_ADDR_LEN];
     char ether_dhost[3 * ETHER_ADDR_LEN];
+    int data_len;
     char *data;
     int i, j;
 
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
             sprintf(ether_dhost + 3*i + 2, (i==ETHER_ADDR_LEN-1?"":":"));
         }
         printf("[mac addr]\n");
-        printf("shost mac addr : %s\n", ether_shost);
+        prin    tf("shost mac addr : %s\n", ether_shost);
         printf("dhost mac addr : %s\n", ether_dhost);
         printf("\n");
 
@@ -94,8 +95,9 @@ int main(int argc, char *argv[])
                 printf("\n");
 
                 data = (char *)(packet + sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
+                data_len = header.len - (sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
                 printf("[data]\n");
-                write(1, data, 0x10);
+                write(1, data, (0x10<data_len?0x10:data_len));
                 printf("\n");
             }
         }
