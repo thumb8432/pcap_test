@@ -21,8 +21,10 @@ int main(int argc, char *argv[])
     struct ether_header *eth_hdr;
     struct ip           *ip_hdr;
     struct tcphdr       *tcp_hdr;
+    char ether_shost[3 * ETHER_ADDR_LEN];
+    char ether_dhost[3 * ETHER_ADDR_LEN];
     char *data;
-    int i;
+    int i, j;
 
     /* Define the device */
     dev = pcap_lookupdev(errbuf);
@@ -61,22 +63,18 @@ int main(int argc, char *argv[])
         printf("**********************************\n");
 
         eth_hdr = (struct ether_header*) packet;
+        for(i=0;i<ETHER_ADDR_LEN;i++)
+        {
+            sprintf(ether_shost + 3*i, "%02x", eth_hdr->ether_shost[i]);
+            sprintf(ether_shost + 3*i + 2, (i==ETHER_ADDR_LEN-1?"":":"));
 
+            sprintf(ether_dhost + 3*i, "%02x", eth_hdr->ether_dhost[i]);
+            sprintf(ether_dhost + 3*i + 2, (i==ETHER_ADDR_LEN-1?"":":"));
+        }
         printf("[mac addr]\n");
-        printf("shost mac addr : ");
-        for(i=0;i<ETHER_ADDR_LEN;i++)
-        {
-            printf(i==0?"":":");
-            printf("%02x", eth_hdr->ether_shost[i]);
-        }
+        printf("shost mac addr : %s\n", ether_shost);
+        printf("dhost mac addr : %s\n", ether_dhost);
         printf("\n");
-        printf("dhost mac addr : ");
-        for(i=0;i<ETHER_ADDR_LEN;i++)
-        {
-            printf(i==0?"":":");
-            printf("%02x", eth_hdr->ether_dhost[i]);
-        }
-        printf("\n\n");
 
         if(ntohs(eth_hdr->ether_type) == ETHERTYPE_IP)
         {
@@ -87,7 +85,7 @@ int main(int argc, char *argv[])
             printf("dhost ip addr : %s\n", inet_ntoa(ip_hdr->ip_dst));
             printf("\n");
 
-            if(ip_hdr->ip_p == 0x06) // TCP protocol
+            if(ip_hdr->ip_p == IPPROTO_TCP) // TCP protocol
             {
                 tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) + sizeof(struct ip));
                 printf("[tcp port]\n");
