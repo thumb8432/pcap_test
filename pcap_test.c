@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
             {
                 tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) + sizeof(struct ip));
                 printf("[tcp port]\n");
-                printf("source port : %d\n", tcp_hdr->source);
-                printf("dest port : %d\n", tcp_hdr->dest);
+                printf("source port : %d\n", ntohs(tcp_hdr->source));
+                printf("dest port : %d\n", ntohs(tcp_hdr->dest));
                 printf("\n");
 
                 data = (char *)(packet + sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
