@@ -5,6 +5,8 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <netinet/ether.h>
+#include <stdint.h>
 
 int main(int argc, char *argv[])
 {
@@ -21,8 +23,8 @@ int main(int argc, char *argv[])
     struct ether_header *eth_hdr;
     struct ip           *ip_hdr;
     struct tcphdr       *tcp_hdr;
-    char ether_shost[3 * ETHER_ADDR_LEN];
-    char ether_dhost[3 * ETHER_ADDR_LEN];
+    char ip_src_buf[16];
+    char ip_dst_buf[16];
     int data_len;
     char *data;
     int i, j;
@@ -64,17 +66,10 @@ int main(int argc, char *argv[])
         printf("**********************************\n");
 
         eth_hdr = (struct ether_header*) packet;
-        for(i=0;i<ETHER_ADDR_LEN;i++)
-        {
-            sprintf(ether_shost + 3*i, "%02x", eth_hdr->ether_shost[i]);
-            sprintf(ether_shost + 3*i + 2, (i==ETHER_ADDR_LEN-1?"":":"));
 
-            sprintf(ether_dhost + 3*i, "%02x", eth_hdr->ether_dhost[i]);
-            sprintf(ether_dhost + 3*i + 2, (i==ETHER_ADDR_LEN-1?"":":"));
-        }
         printf("[mac addr]\n");
-        printf("shost mac addr : %s\n", ether_shost);
-        printf("dhost mac addr : %s\n", ether_dhost);
+        printf("shost mac addr : %s\n", ether_ntoa((struct ether_addr *)eth_hdr->ether_shost));
+        printf("dhost mac addr : %s\n", ether_ntoa((struct ether_addr *)eth_hdr->ether_dhost));
         printf("\n");
 
         if(ntohs(eth_hdr->ether_type) == ETHERTYPE_IP)
@@ -82,8 +77,10 @@ int main(int argc, char *argv[])
             ip_hdr = (struct ip *)(packet + sizeof(struct ether_header));
 
             printf("[ip addr]\n");
-            printf("shost ip addr : %s\n", inet_ntoa(ip_hdr->ip_src));
-            printf("dhost ip addr : %s\n", inet_ntoa(ip_hdr->ip_dst));
+            inet_ntop(AF_INET, &(ip_hdr->ip_src), ip_src_buf, sizeof(ip_src_buf));
+            inet_ntop(AF_INET, &(ip_hdr->ip_dst), ip_dst_buf, sizeof(ip_dst_buf));
+            printf("shost ip addr : %s\n", ip_src_buf);
+            printf("dhost ip addr : %s\n", ip_dst_buf);
             printf("\n");
 
             if(ip_hdr->ip_p == IPPROTO_TCP) // TCP protocol
