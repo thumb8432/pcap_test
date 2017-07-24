@@ -29,18 +29,14 @@ int main(int argc, char *argv[])
     char *data;
     int i, j;
 
-    /* Define the device */
-    dev = pcap_lookupdev(errbuf);
-    if (dev == NULL) {
-        fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
+    if(argc != 2)
+    {
+        printf("usage : %s interface\n", argv[0]);
         return(2);
     }
-    /* Find the properties for the device */
-    if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
-        fprintf(stderr, "Couldn't get netmask for device %s: %s\n", dev, errbuf);
-        net = 0;
-        mask = 0;
-    }
+    /* Define the device */
+    dev = argv[1];
+
     /* Open the session in promiscuous mode */
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
@@ -85,16 +81,32 @@ int main(int argc, char *argv[])
 
             if(ip_hdr->ip_p == IPPROTO_TCP) // TCP protocol
             {
-                tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) + sizeof(struct ip));
+                tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) + ((int)ip_hdr->ip_hl) * 4);
                 printf("[tcp port]\n");
                 printf("source port : %d\n", ntohs(tcp_hdr->source));
                 printf("dest port : %d\n", ntohs(tcp_hdr->dest));
                 printf("\n");
 
-                data = (char *)(packet + sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
-                data_len = header->len - (sizeof(struct ether_header) + sizeof(struct ip) + sizeof(struct tcphdr));
-                printf("[data]\n");
-                write(1, data, (0x10<data_len?0x10:data_len));
+                data = (char *)((char*)packet + sizeof(struct ether_header) + ((int)ip_hdr->ip_hl) * 4 + ((int)(tcp_hdr->th_off)) * 4);
+                data_len = (int)ntohs(ip_hdr->ip_len) - (((int)ip_hdr->ip_hl) * 4 + ((int)tcp_hdr->th_off) * 4);
+
+                printf("data_len : %d\n", data_len);
+                printf("[data]");
+                for(i=0;i<data_len;i++)
+                {
+                    if(i%16 == 0)
+                    {
+                        printf("\n");
+                    }
+                    if(0x20 <= data[i] && data[i] < 0x7f)
+                    {
+                        printf("%c ", data[i]);
+                    }
+                    else
+                    {
+                        printf(". ");
+                    }
+                }
                 printf("\n");
             }
         }
